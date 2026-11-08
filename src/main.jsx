@@ -288,7 +288,75 @@ function App(){
  const [onlineStatus,setOnlineStatus]=useState('connecting'); const [onlinePlayer,setOnlinePlayer]=useState(null);
  const [detailShoe,setDetailShoe]=useState(null);
  const [inventory,setInventory]=useState(initialInventory), [brand,setBrand]=useState('Все'), [collectionSearch,setCollectionSearch]=useState(''), [searchOpen,setSearchOpen]=useState(false), [modal,setModal]=useState(''), [notices,setNotices]=useState([]);
- const setNotice=(message)=>{if(!message)return;const id=Date.now()+Math.random();setNotices(v=>[...v,{id,message:String(message)}].slice(-4));setTimeout(()=>setNotices(v=>v.filter(n=>n.id!==id)),3400)};
+ const setNotice=(message)=>{if(!message)return;const id=Date.now()+Math.random();setNotices(v=>[...v,{id,message:String(message)}].slice(-4));setTimeout(()=>setNotices(v=>v.filter(n=>n.id!==id)),3400)}; useEffect(() => {
+  const tg = window.Telegram?.WebApp;
+
+  if (!tg?.initData) {
+    console.log('SneakerDrop: игра открыта не через Telegram');
+    return;
+  }
+
+  tg.ready();
+  tg.expand();
+
+  let cancelled = false;
+
+  async function loadPlayer() {
+    try {
+      const response = await fetch('/api/telegram/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          initData: tg.initData
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Ошибка авторизации');
+      }
+
+      if (cancelled) return;
+
+      setRubles(Number(data.balance) || 0);
+
+      const shoes = Array.isArray(data.inventory)
+        ? data.inventory.map(item => {
+            const shoe = item.shoe_data || {};
+
+            return {
+              ...shoe,
+              id: item.id,
+              shoeId: item.shoe_id,
+              name: shoe.name || item.shoe_id || 'Кроссовок',
+              brand: shoe.brand || '',
+              rarity: shoe.rarity || 'Обычная',
+              abbr: shoe.abbr || '',
+              image: shoe.image || ''
+            };
+          })
+        : [];
+
+      setInventory(shoes);
+
+      console.log('SneakerDrop: игрок загружен', data.player);
+    } catch (error) {
+      console.error('SneakerDrop auth error:', error);
+      if (!cancelled) {
+        setNotice('Не удалось загрузить аккаунт. Попробуй перезапустить игру.');
+      }
+    }
+  }
+
+  loadPlayer();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
  useEffect(()=>{let cancelled=false;async function connectTelegram(){try{const webApp=window.Telegram?.WebApp;const initData=webApp?.initData;if(!initData){setOnlineStatus('telegram-required');return;}webApp.ready?.();const response=await fetch('/api/telegram/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData})});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'Не удалось подключиться к серверу');if(cancelled)return;setRubles(Number(data.wallet?.coins||0));setInventory(Array.isArray(data.inventory)?data.inventory:[]);setOnlinePlayer(data.player||null);setOnlineStatus('online');}catch(error){if(!cancelled){setOnlineStatus('error');console.error('SneakerDrop online auth:',error);}}}connectTelegram();return()=>{cancelled=true}},[]);
  const [caseOpen,setCaseOpen]=useState(null), [caseConfirm,setCaseConfirm]=useState(null), [rolling,setRolling]=useState(false), [drop,setDrop]=useState(null), [multiDrops,setMultiDrops]=useState([]), [multiRouletteData,setMultiRouletteData]=useState([]), [caseQuantity,setCaseQuantity]=useState(1);
  const [stake,setStake]=useState(100), stakeDraftRef=useRef(100), [crashState,setCrashState]=useState('idle'), [multiplier,setMultiplier]=useState(1), [gameResult,setGameResult]=useState('');
