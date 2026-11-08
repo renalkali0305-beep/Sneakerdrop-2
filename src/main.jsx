@@ -114,7 +114,7 @@ function upgradeChanceFor(source, targetRow) {
   // 300 ₽ → 799 ₽ = 37.5%. Более дорогая цель = меньший шанс.
   return Math.round(Math.max(1, Math.min(95, (sourcePrice / targetPrice) * 100)) * 10) / 10;
 }
-const initialInventory = []; // Новые игроки начинают с пустым инвентарём.
+const initialInventory = []; // Новый игрок получает пустой инвентарь из серверной базы.
 const cases = [
   {name:'Стартовый',sub:'Первый шаг в коллекцию',price:18750,tag:'ДЛЯ НОВИЧКОВ',accent:'mint',icon:'📦',caseImage:'/assets/case-starter.png'},
   {name:'Бюджетный',sub:'Найди скрытый хит',price:26500,tag:'ХИТ',accent:'purple',icon:'🟣',caseImage:'/assets/case-budget.png'},
@@ -243,9 +243,11 @@ function ShoeArt({shoe, large=false, noBackground=false}) {
 }
 function App(){
  const [view,setView]=useState('games'), [game,setGame]=useState('crash'), [rubles,setRubles]=useState(0), [stars,setStars]=useState(0);
+ const [onlineStatus,setOnlineStatus]=useState('connecting'); const [onlinePlayer,setOnlinePlayer]=useState(null);
  const [detailShoe,setDetailShoe]=useState(null);
  const [inventory,setInventory]=useState(initialInventory), [brand,setBrand]=useState('Все'), [collectionSearch,setCollectionSearch]=useState(''), [searchOpen,setSearchOpen]=useState(false), [modal,setModal]=useState(''), [notices,setNotices]=useState([]);
  const setNotice=(message)=>{if(!message)return;const id=Date.now()+Math.random();setNotices(v=>[...v,{id,message:String(message)}].slice(-4));setTimeout(()=>setNotices(v=>v.filter(n=>n.id!==id)),3400)};
+ useEffect(()=>{let cancelled=false;async function connectTelegram(){try{const webApp=window.Telegram?.WebApp;const initData=webApp?.initData;if(!initData){setOnlineStatus('telegram-required');return;}webApp.ready?.();const response=await fetch('/api/telegram/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData})});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'Не удалось подключиться к серверу');if(cancelled)return;setRubles(Number(data.wallet?.coins||0));setInventory(Array.isArray(data.inventory)?data.inventory:[]);setOnlinePlayer(data.player||null);setOnlineStatus('online');}catch(error){if(!cancelled){setOnlineStatus('error');console.error('SneakerDrop online auth:',error);}}}connectTelegram();return()=>{cancelled=true}},[]);
  const [caseOpen,setCaseOpen]=useState(null), [caseConfirm,setCaseConfirm]=useState(null), [rolling,setRolling]=useState(false), [drop,setDrop]=useState(null), [multiDrops,setMultiDrops]=useState([]), [multiRouletteData,setMultiRouletteData]=useState([]), [caseQuantity,setCaseQuantity]=useState(1);
  const [stake,setStake]=useState(100), stakeDraftRef=useRef(100), [crashState,setCrashState]=useState('idle'), [multiplier,setMultiplier]=useState(1), [gameResult,setGameResult]=useState('');
  const [rescueSource,setRescueSource]=useState(null), [rescueTarget,setRescueTarget]=useState(catalog[2]), [rescueRound,setRescueRound]=useState(0), [rescueHits,setRescueHits]=useState(0), [rescueZone,setRescueZone]=useState(28), [rescueArrow,setRescueArrow]=useState(0), [rescueDirection,setRescueDirection]=useState(1), [rescueSpeed,setRescueSpeed]=useState(.105), [rescuePlaying,setRescuePlaying]=useState(false), [rescueResult,setRescueResult]=useState('');
