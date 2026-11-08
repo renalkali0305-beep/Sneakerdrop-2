@@ -114,7 +114,7 @@ function upgradeChanceFor(source, targetRow) {
   // 300 ₽ → 799 ₽ = 37.5%. Более дорогая цель = меньший шанс.
   return Math.round(Math.max(1, Math.min(95, (sourcePrice / targetPrice) * 100)) * 10) / 10;
 }
-const initialInventory = catalog.slice(0,6).map((s,i)=>({id:i+1,name:s[0],brand:s[1],rarity:s[2],abbr:s[3],image:s[4],collection:s[5]||`${s[1]} Classics`,price:shoePrice(s)}));
+const initialInventory = []; // Новые игроки начинают с пустым инвентарём.
 const cases = [
   {name:'Стартовый',sub:'Первый шаг в коллекцию',price:18750,tag:'ДЛЯ НОВИЧКОВ',accent:'mint',icon:'📦',caseImage:'/assets/case-starter.png'},
   {name:'Бюджетный',sub:'Найди скрытый хит',price:26500,tag:'ХИТ',accent:'purple',icon:'🟣',caseImage:'/assets/case-budget.png'},
@@ -242,7 +242,7 @@ function ShoeArt({shoe, large=false, noBackground=false}) {
  </div>
 }
 function App(){
- const [view,setView]=useState('games'), [game,setGame]=useState('crash'), [rubles,setRubles]=useState(1000), [stars,setStars]=useState(0);
+ const [view,setView]=useState('games'), [game,setGame]=useState('crash'), [rubles,setRubles]=useState(0), [stars,setStars]=useState(0);
  const [detailShoe,setDetailShoe]=useState(null);
  const [inventory,setInventory]=useState(initialInventory), [brand,setBrand]=useState('Все'), [collectionSearch,setCollectionSearch]=useState(''), [searchOpen,setSearchOpen]=useState(false), [modal,setModal]=useState(''), [notices,setNotices]=useState([]);
  const setNotice=(message)=>{if(!message)return;const id=Date.now()+Math.random();setNotices(v=>[...v,{id,message:String(message)}].slice(-4));setTimeout(()=>setNotices(v=>v.filter(n=>n.id!==id)),3400)};
