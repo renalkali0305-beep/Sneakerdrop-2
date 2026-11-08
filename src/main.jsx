@@ -242,6 +242,48 @@ function ShoeArt({shoe, large=false, noBackground=false}) {
  </div>
 }
 function App(){
+  const [telegramAuth, setTelegramAuth] = useState('loading');
+
+ useEffect(() => {
+   const telegram = window.Telegram?.WebApp;
+
+   if (!telegram) {
+     setTelegramAuth('not_telegram');
+     return;
+   }
+
+   telegram.ready();
+   telegram.expand();
+
+   const initData = telegram.initData;
+
+   if (!initData) {
+     setTelegramAuth('missing_data');
+     return;
+   }
+
+   fetch('/api/telegram/auth', {
+     method: 'POST',
+     headers: {
+       'Content-Type': 'application/json'
+     },
+     body: JSON.stringify({ initData })
+   })
+     .then(async response => {
+       const data = await response.json();
+
+       if (!response.ok || !data.ok) {
+         throw new Error(data.error || 'Авторизация не пройдена');
+       }
+
+       setTelegramAuth('success');
+       console.log('SneakerDrop: игрок авторизован', data.player);
+     })
+     .catch(error => {
+       console.error('SneakerDrop auth error:', error);
+       setTelegramAuth('error');
+     });
+ }, []);
  const [view,setView]=useState('games'), [game,setGame]=useState('crash'), [rubles,setRubles]=useState(0), [stars,setStars]=useState(0);
  const [onlineStatus,setOnlineStatus]=useState('connecting'); const [onlinePlayer,setOnlinePlayer]=useState(null);
  const [detailShoe,setDetailShoe]=useState(null);
